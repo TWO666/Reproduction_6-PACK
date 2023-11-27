@@ -8,7 +8,8 @@ import torch.nn as nn
 import random
 import torch.backends.cudnn as cudnn
 import torch.nn.functional as F
-from libs.knn.__init__ import KNearestNeighbor
+# from libs.knn.__init__ import KNearestNeighbor
+from knn_cuda import KNN
 import torch.distributions as tdist
 import copy
 
@@ -33,7 +34,8 @@ class Loss(_Loss):
         self.select1 = torch.tensor([i for j in range(num_key-1) for i in range(num_key)]).cuda()
         self.select2 = torch.tensor([(i%num_key) for j in range(1, num_key) for i in range(j, j+num_key)]).cuda()
 
-        self.knn = KNearestNeighbor(1)
+        # self.knn = KNearestNeighbor(1)
+        self.knn = KNN(k=1, transpose_mode=True)
 
     def estimate_rotation(self, pt0, pt1, sym_or_not):
         pconf2 = self.pconf.view(1, self.num_key, 1)
