@@ -1,4 +1,5 @@
 My_NOCS
+.idea
 */__pycache__/
 libs/knn/__pycache__/
 libs/knn/knn_pytorch/__pycache__/
