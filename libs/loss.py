@@ -35,7 +35,7 @@ class Loss(_Loss):
         self.select2 = torch.tensor([(i%num_key) for j in range(1, num_key) for i in range(j, j+num_key)]).cuda()
 
         # self.knn = KNearestNeighbor(1)
-        self.knn = KNN(k=1, transpose_mode=True)
+        self.knn = KNN(k=1)
 
     def estimate_rotation(self, pt0, pt1, sym_or_not):
         pconf2 = self.pconf.view(1, self.num_key, 1)
@@ -221,7 +221,9 @@ class Loss(_Loss):
 
         loss = loss_att * 4.0 + Kp_dis * 3.0 + Kp_cent_dis + loss_rot * 0.2 + loss_surf * 3.0 + loss_sep
         score = (loss_att * 4.0 + Kp_dis * 3.0 + Kp_cent_dis + loss_rot * 0.2).item()
-        print(cate.view(-1).item(), loss_att.item(), Kp_dis.item(), Kp_cent_dis.item(), loss_rot.item(), loss_surf.item(), loss_sep)
+        cate.view(
+            -1).item(), loss_att.item(), Kp_dis.item(), Kp_cent_dis.item(), loss_rot.item(), loss_surf.item(), loss_sep
+        # print(cate.view(-1).item(), loss_att.item(), Kp_dis.item(), Kp_cent_dis.item(), loss_rot.item(), loss_surf.item(), loss_sep)
 
         return loss, score
 

@@ -70,6 +70,8 @@ class Dataset():
 
         self.color = np.array([[255, 69, 0], [124, 252, 0], [0, 238, 238], [238, 238, 0], [155, 48, 255], [0, 0, 238], [255, 131, 250], [189, 183, 107], [165, 42, 42], [0, 234, 0]])
 
+        self.color1 = np.array([[255, 0, 0], [0, 255, 0], [0, 0, 255]])
+
         self.norm = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
         self.trancolor = transforms.ColorJitter(0.9, 0.5, 0.5, 0.05)
@@ -353,7 +355,11 @@ class Dataset():
         return bbox
 
     def projection(self, path, Kp, current_r, current_t, scale, www, add_on, score):
-        img = np.array(Image.open('{0}_color.png'.format(self.real_obj_list[self.choose_obj][self.index])))
+        # img = np.array(Image.open('{0}_color.png'.format(self.real_obj_list[self.choose_obj][self.index])))
+        img_dir = '{0}_color.png'.format(self.real_obj_list[self.choose_obj][self.index])
+        img = np.array(Image.open(img_dir))
+        save_img_dir = '{0}_color_with_pose.png'.format(self.real_obj_list[self.choose_obj][self.index])
+
 
         cam_cx = self.cam_cx_2
         cam_cy = self.cam_cy_2
@@ -438,8 +444,84 @@ class Dataset():
                 for yyy in range(y-4, y+5):
                     img[xxx][yyy] = self.color[2]
 
+        ##############################################################
+        ###################
+        # 尝试在图中标记坐标轴
+        # 已知limit[0]到limit[5]分别是bbox的min_x, max_x, min_y, max_y, min_z, max_z
+        # tg是物体坐标系原点 [X,Y,Z]
+        tg = anchor_box[www]  # 目标锚点(相机系下)
+        tg[0] *= -1.0
+        tg[1] *= -1.0
+        tg = np.dot((tg - target_t), target_r)  # 变换到物体世界系中，理想的话应该是[0，0，0]
+
+        obj_x = []
+        lenx = limit[1] - limit[0]
+        lenx = 0.4 * lenx
+        for i in np.arange(float(int(tg[0])), float(int(tg[0] + lenx)), 1.0):
+            obj_x.append([i, tg[1], tg[2]])
+
+        obj_x = np.dot(obj_x, target_r.T) + target_t  # 变换至相机系
+        obj_x[:, 0] *= -1.0
+        obj_x[:, 1] *= -1.0
+
+        for ppp in obj_x:
+            y = int(ppp[0] * cam_fx / ppp[2] + cam_cx)
+            x = int(ppp[1] * cam_fy / ppp[2] + cam_cy)
+
+            if x - 3 < 0 or x + 3 > 479 or y - 3 < 0 or y + 3 > 639:
+                continue
+
+            for xxx in range(x - 2, x + 3):
+                for yyy in range(y - 2, y + 3):
+                    img[xxx][yyy] = self.color1[0]
+
+        obj_y = []
+        leny = limit[3] - limit[2]
+        leny = 0.4 * leny
+        for i in np.arange(float(int(tg[1])), float(int(tg[1] + leny)), 1.0):
+            obj_y.append([tg[0], i, tg[2]])
+
+        obj_y = np.dot(obj_y, target_r.T) + target_t  # 变换至相机系
+        obj_y[:, 0] *= -1.0
+        obj_y[:, 1] *= -1.0
+
+        for ppp in obj_y:
+            y = int(ppp[0] * cam_fx / ppp[2] + cam_cx)
+            x = int(ppp[1] * cam_fy / ppp[2] + cam_cy)
+
+            if x - 3 < 0 or x + 3 > 479 or y - 3 < 0 or y + 3 > 639:
+                continue
+
+            for xxx in range(x - 2, x + 3):
+                for yyy in range(y - 2, y + 3):
+                    img[xxx][yyy] = self.color1[1]
+
+        obj_z = []
+        lenz = limit[5] - limit[4]
+        lenz = 0.4 * lenz
+        for i in np.arange(float(int(tg[2])), float(int(tg[2] + lenz)), 1.0):
+            obj_z.append([tg[0], tg[1], i])
+
+        obj_z = np.dot(obj_z, target_r.T) + target_t  # 变换至相机系
+        obj_z[:, 0] *= -1.0
+        obj_z[:, 1] *= -1.0
+
+        for ppp in obj_z:
+            y = int(ppp[0] * cam_fx / ppp[2] + cam_cx)
+            x = int(ppp[1] * cam_fy / ppp[2] + cam_cy)
+
+            if x - 3 < 0 or x + 3 > 479 or y - 3 < 0 or y + 3 > 639:
+                continue
+
+            for xxx in range(x - 2, x + 3):
+                for yyy in range(y - 2, y + 3):
+                    img[xxx][yyy] = self.color1[2]
+
+
+
         if add_on:
             self.index += 1
+            Image.fromarray(img).save(save_img_dir)
 
 
     def __len__(self):

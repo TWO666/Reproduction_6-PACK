@@ -1,11 +1,19 @@
 import os
 import glob
+
+import cv2
 import numpy as np
 import math
 import _pickle as cPickle
 
+
+def clamp(value, min_value, max_value):
+    return max(min(value, max_value), min_value)
+
+
 pred_data = "eval_results/TEST_"
-pred_list = [1]      # eval_id list, if you want to test the mean score of TEST_1 and TEST_2, change to [1,2]
+# pred_data = "/mnt/win_e_1D5T/DATASETS/six-pack/6pack_NOCSreal275_evaluation_results/6pack_evaluation_results/TEMP_"
+pred_list = [_ for _ in range(10,11)]  # eval_id list, if you want to test the mean score of TEST_1 and TEST_2, change to [1,2]
 data_dir = "My_NOCS"
 
 synset_names = ['BG', 
@@ -140,7 +148,7 @@ def main():
         score_25 = 0
         rot_err = 0
         trans_err = 0
-        for cls_idx in [1,2,3,4,5,6]:
+        for cls_idx in [6]:
             cls_num = 0
             cls_test_num = 0
             cls_in_5_5 = 0
@@ -185,6 +193,12 @@ def main():
                             print(pred_path)
                             continue 
                         obj_path = img_path + "_meta.txt"
+
+                        mask_path = img_path + "_mask.png"
+                        mask_im = cv2.imread(mask_path)[:,:,2]
+                        mask_im = np.array(mask_im)
+                        inst_ids = np.unique(mask_im)
+
                         ins_id = -1
                         num_idx = 0
                         with open(obj_path, "r") as obj_f:
@@ -192,7 +206,8 @@ def main():
                                 if int(line.split(" ")[1]) == cls_idx and line.split(" ")[-1].replace("\n","") == model_name:
                                     ins_id = int(line.split(" ")[0])
                                     break
-                                num_idx = num_idx + 1
+                                if int(line.split(" ")[1]) in inst_ids:
+                                    num_idx = num_idx + 1
                         if ins_id == -1:
                             continue
                         with open(nocs_gt_path, 'rb') as f:
@@ -239,6 +254,14 @@ def main():
             all_score25[-1].append(cls_iou_25/cls_num)
             all_rot_err[-1].append(np.mean(cls_rot))
             all_trans_err[-1].append(np.mean(cls_trans))
+
+            print("********************************************************")
+            print(f"{synset_names[cls_idx]}")
+            print("5cm 5degree:", all_score[-1][-1]*100)
+            print("IoU 25:     ", all_score25[-1][-1]*100)
+            print("rot error:  ", all_rot_err[-1][-1])
+            print("tran error: ", all_trans_err[-1][-1]/10)
+
             score = score + (cls_in_5_5/cls_num)/6
             score_25 = score_25 + (cls_iou_25/cls_num)/6
             rot_err = rot_err +  np.mean(cls_rot)/6
@@ -257,7 +280,7 @@ def main():
     print("Mean IoU 25:     ",np.mean(np.array(all_score25)*100,0)[-1])
     print("Mean rot error:  ",np.mean(np.array(all_rot_err),0)[-1])
     print("Mean tran error: ",np.mean(np.array(all_trans_err)/10,0)[-1])
-    #print(score_dict)
+    # print(score_dict)
     print("********************************************************")
         
 

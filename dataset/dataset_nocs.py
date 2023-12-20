@@ -584,6 +584,8 @@ def get_2dbbox(cloud, cam_cx, cam_cy, cam_fx, cam_fy, cam_scale):
     cmin = 10000
     cmax = -10000
     for tg in cloud:
+        if tg[2] == 0:
+            continue
         p1 = int(tg[0] * cam_fx / tg[2] + cam_cx)
         p0 = int(tg[1] * cam_fy / tg[2] + cam_cy)
         if p0 < rmin:
