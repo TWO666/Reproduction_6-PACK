@@ -18,22 +18,30 @@ from libs.network import KeyNet
 from libs.loss import Loss
 import copy
 
-choose_cate_list = [1,2,3,4,5,6]
+choose_cate_list = [6]
 resume_models = ['model_112_0.184814792342484_bottle.pth',
                  'model_120_0.10268432162888348_bowl.pth',
-                 'model_118_0.2008235973417759_camera.pth', 
+                 'model_118_0.2008235973417759_camera.pth',
                  'model_107_0.18291547849029302_can.pth',
-                 'model_117_0.12762234719470145_laptop.pth',
-                 'model_102_0.1468337191492319_mug.pth']
+                 'model_60_0.14469129893183708_laptop.pth',
+                 'model_230_0.1649757352359593_mug.pth']
+
+# choose_cate_list = [5, ]
+# resume_models = ['model_112_0.184814792342484_bottle.pth',
+#                  'model_120_0.10268432162888348_bowl.pth',
+#                  'model_118_0.2008235973417759_camera.pth',
+#                  'model_107_0.18291547849029302_can.pth',
+#                  'model_117_0.12762234719470145_laptop.pth',
+#                  'model_102_0.1468337191492319_mug.pth']
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset_root', type=str, default = 'My_NOCS', help='dataset root dir')
-parser.add_argument('--eval_id', type=int, default = 1, help='the evaluation id')
+parser.add_argument('--dataset_root', type=str, default='My_NOCS', help='dataset root dir')
+parser.add_argument('--eval_id', type=int, default=10, help='the evaluation id')
 parser.add_argument('--ite', type=int, default=10, help='first frame fix iteration')
-parser.add_argument('--num_kp', type=int, default = 8, help='num of kp')
-parser.add_argument('--num_points', type=int, default = 500, help='num of input points')
-parser.add_argument('--num_cates', type=int, default = 6, help='number of categories')
-parser.add_argument('--outf', type=str, default = 'models/', help='load model dir')
+parser.add_argument('--num_kp', type=int, default=8, help='num of kp')
+parser.add_argument('--num_points', type=int, default=500, help='num of input points')
+parser.add_argument('--num_cates', type=int, default=6, help='number of categories')
+parser.add_argument('--outf', type=str, default='models/', help='load model dir')
 opt = parser.parse_args()
 
 if not os.path.exists('eval_results'):
@@ -45,11 +53,11 @@ if not os.path.exists('eval_results/TEST_{0}'.format(opt.eval_id)):
         os.makedirs('eval_results/TEST_{0}/temp_{1}'.format(opt.eval_id, item))
 
 for choose_cate in choose_cate_list:
-    model = KeyNet(num_points = opt.num_points, num_key = opt.num_kp, num_cates = opt.num_cates)
+    model = KeyNet(num_points=opt.num_points, num_key=opt.num_kp, num_cates=opt.num_cates)
     model.cuda()
     model.eval()
 
-    model.load_state_dict(torch.load('{0}/{1}'.format(opt.outf, resume_models[choose_cate-1])))
+    model.load_state_dict(torch.load('{0}/{1}'.format(opt.outf, resume_models[choose_cate - 1])))
 
     pconf = torch.ones(opt.num_kp) / opt.num_kp
     pconf = Variable(pconf).cuda()
@@ -73,13 +81,13 @@ for choose_cate in choose_cate_list:
 
             if opt.ite != 0:
                 min_dis = 1000.0
-                for iterative in range(opt.ite):  
+                for iterative in range(opt.ite):
                     img_fr, choose_fr, cloud_fr, anchor, scale = test_dataset.getone(current_r, current_t)
                     img_fr, choose_fr, cloud_fr, anchor, scale = Variable(img_fr).cuda(), \
-                                                         Variable(choose_fr).cuda(), \
-                                                         Variable(cloud_fr).cuda(), \
-                                                         Variable(anchor).cuda(), \
-                                                         Variable(scale).cuda()
+                        Variable(choose_fr).cuda(), \
+                        Variable(cloud_fr).cuda(), \
+                        Variable(anchor).cuda(), \
+                        Variable(scale).cuda()
                     Kp_fr, att_fr = model.eval_forward(img_fr, choose_fr, cloud_fr, anchor, scale, 0.0, True)
                     new_t, att, kp_dis = criterion.ev_zero(Kp_fr[0], att_fr[0])
 
@@ -95,22 +103,24 @@ for choose_cate in choose_cate_list:
 
             img_fr, choose_fr, cloud_fr, anchor, scale = test_dataset.getone(current_r, current_t)
             img_fr, choose_fr, cloud_fr, anchor, scale = Variable(img_fr).cuda(), \
-                                                 Variable(choose_fr).cuda(), \
-                                                 Variable(cloud_fr).cuda(), \
-                                                 Variable(anchor).cuda(), \
-                                                 Variable(scale).cuda()
+                Variable(choose_fr).cuda(), \
+                Variable(cloud_fr).cuda(), \
+                Variable(anchor).cuda(), \
+                Variable(scale).cuda()
             Kp_fr, att_fr = model.eval_forward(img_fr, choose_fr, cloud_fr, anchor, scale, 0.0, True)
 
-            test_dataset.projection('eval_results/TEST_{0}/temp_{1}/{2}_{3}'.format(opt.eval_id, choose_cate, choose_obj, choose_video), Kp_fr[0], current_r, current_t, scale, att_fr[0], True, 0.0)
+            test_dataset.projection(
+                'eval_results/TEST_{0}/temp_{1}/{2}_{3}'.format(opt.eval_id, choose_cate, choose_obj, choose_video),
+                Kp_fr[0], current_r, current_t, scale, att_fr[0], True, 0.0)
 
             min_dis = 0.0005
             while 1:
                 img_fr, choose_fr, cloud_fr, anchor, scale = test_dataset.getone(current_r, current_t)
                 img_fr, choose_fr, cloud_fr, anchor, scale = Variable(img_fr).cuda(), \
-                                                     Variable(choose_fr).cuda(), \
-                                                     Variable(cloud_fr).cuda(), \
-                                                     Variable(anchor).cuda(), \
-                                                     Variable(scale).cuda()
+                    Variable(choose_fr).cuda(), \
+                    Variable(cloud_fr).cuda(), \
+                    Variable(anchor).cuda(), \
+                    Variable(scale).cuda()
                 Kp_to, att_to = model.eval_forward(img_fr, choose_fr, cloud_fr, anchor, scale, min_dis, False)
 
                 min_dis = 1000.0
@@ -129,10 +139,13 @@ for choose_cate in choose_cate_list:
                 current_t = current_t + np.dot(best_t, current_r.T)
                 current_r = np.dot(current_r, best_r)
 
-                test_dataset.projection('eval_results/TEST_{0}/temp_{1}/{2}_{3}'.format(opt.eval_id, choose_cate, choose_obj, choose_video), Kp_real, current_r, current_t, scale, best_att, True, min_dis)
+                test_dataset.projection(
+                    'eval_results/TEST_{0}/temp_{1}/{2}_{3}'.format(opt.eval_id, choose_cate, choose_obj, choose_video),
+                    Kp_real, current_r, current_t, scale, best_att, True, min_dis)
 
                 print("NEXT FRAME!!!")
 
-        except:
+        except Exception as e:
+            print(e)
             continue
     print("FINISH!!!")

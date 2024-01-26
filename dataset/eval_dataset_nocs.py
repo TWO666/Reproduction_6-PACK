@@ -16,6 +16,7 @@ import scipy.io as scio
 import cv2
 import _pickle as cPickle
 
+
 class Dataset():
     def __init__(self, mode, root, add_noise, num_pts, cate_id, count):
         self.root = root
@@ -31,7 +32,8 @@ class Dataset():
             print(item)
             self.real_obj_list[item] = []
 
-            input_file = open('{0}/data_list/real_{1}/{2}/{3}/list.txt'.format(self.root, self.mode, self.cate_id, item), 'r')
+            input_file = open(
+                '{0}/data_list/real_{1}/{2}/{3}/list.txt'.format(self.root, self.mode, self.cate_id, item), 'r')
 
             while 1:
                 input_line = input_file.readline()
@@ -68,7 +70,9 @@ class Dataset():
         self.xmap = np.array([[j for i in range(640)] for j in range(480)])
         self.ymap = np.array([[i for i in range(640)] for j in range(480)])
 
-        self.color = np.array([[255, 69, 0], [124, 252, 0], [0, 238, 238], [238, 238, 0], [155, 48, 255], [0, 0, 238], [255, 131, 250], [189, 183, 107], [165, 42, 42], [0, 234, 0]])
+        self.color = np.array(
+            [[255, 69, 0], [124, 252, 0], [0, 238, 238], [238, 238, 0], [155, 48, 255], [0, 0, 238], [255, 131, 250],
+             [189, 183, 107], [165, 42, 42], [0, 234, 0]])
 
         self.color1 = np.array([[255, 0, 0], [0, 255, 0], [0, 0, 255]])
 
@@ -81,7 +85,6 @@ class Dataset():
         self.index = 0
         self.video_id = ''
 
-
     def divide_scale(self, scale, pts):
 
         pts[:, 0] = pts[:, 0] / scale[0]
@@ -90,13 +93,11 @@ class Dataset():
 
         return pts
 
-
     def get_anchor_box(self, ori_bbox):
         bbox = ori_bbox
         limit = np.array(search_fit(bbox))
         num_per_axis = 5
         gap_max = num_per_axis - 1
-
 
         gap_x = (limit[1] - limit[0]) / float(gap_max)
         gap_y = (limit[3] - limit[2]) / float(gap_max)
@@ -117,22 +118,20 @@ class Dataset():
 
         return ans, scale
 
-
     def change_to_scale(self, scale, cloud_fr):
         cloud_fr = self.divide_scale(scale, cloud_fr)
 
         return cloud_fr
 
-
     def enlarge_bbox(self, target):
 
         limit = np.array(search_fit(target))
-        longest = max(limit[1]-limit[0], limit[3]-limit[2], limit[5]-limit[4])
+        longest = max(limit[1] - limit[0], limit[3] - limit[2], limit[5] - limit[4])
         longest = longest * 1.3
 
-        scale1 = longest / (limit[1]-limit[0])
-        scale2 = longest / (limit[3]-limit[2])
-        scale3 = longest / (limit[5]-limit[4])
+        scale1 = longest / (limit[1] - limit[0])
+        scale2 = longest / (limit[3] - limit[2])
+        scale3 = longest / (limit[5] - limit[4])
 
         target[:, 0] *= scale1
         target[:, 1] *= scale2
@@ -144,7 +143,7 @@ class Dataset():
         depth = cv2.imread(depth_path, -1)
 
         if len(depth.shape) == 3:
-            depth16 = np.uint16(depth[:, :, 1]*256) + np.uint16(depth[:, :, 2])
+            depth16 = np.uint16(depth[:, :, 1] * 256) + np.uint16(depth[:, :, 2])
             depth16 = depth16.astype(np.uint16)
         elif len(depth.shape) == 2 and depth.dtype == 'uint16':
             depth16 = depth
@@ -156,17 +155,19 @@ class Dataset():
     def get_pose(self, choose_frame, choose_obj):
         has_pose = []
         pose = {}
-        with open('{0}/data/gts/real_test/results_real_test_{1}_{2}.pkl'.format(self.root, choose_frame.split("/")[-2], choose_frame.split("/")[-1]), 'rb') as f:
+        with open('{0}/data/gts/real_test/results_real_test_{1}_{2}.pkl'.format(self.root, choose_frame.split("/")[-2],
+                                                                                choose_frame.split("/")[-1]),
+                  'rb') as f:
             nocs_data = cPickle.load(f)
         for idx in range(nocs_data['gt_RTs'].shape[0]):
             idx = idx + 1
-            pose[idx] = nocs_data['gt_RTs'][idx-1]
+            pose[idx] = nocs_data['gt_RTs'][idx - 1]
             pose[idx][:3, :3] = pose[idx][:3, :3] / np.cbrt(np.linalg.det(pose[idx][:3, :3]))
             z_180_RT = np.zeros((4, 4), dtype=np.float32)
             z_180_RT[:3, :3] = np.diag([-1, -1, 1])
             z_180_RT[3, 3] = 1
             pose[idx] = z_180_RT @ pose[idx]
-            pose[idx][:3,3] = pose[idx][:3,3] * 1000
+            pose[idx][:3, 3] = pose[idx][:3, 3] * 1000
 
         input_file = open('{0}_meta.txt'.format(choose_frame), 'r')
         while 1:
@@ -187,7 +188,6 @@ class Dataset():
         ans_t = ans[:3, 3].flatten()
 
         return ans_r, ans_t, ans_idx
-
 
     def get_frame(self, choose_frame, choose_obj, syn_or_real, current_r, current_t):
         img = Image.open('{0}_color.png'.format(choose_frame))
@@ -241,7 +241,8 @@ class Dataset():
 
         cloud = np.dot(cloud - current_t, current_r)
 
-        choose_temp = (cloud[:, 0] > limit[0]) * (cloud[:, 0] < limit[1]) * (cloud[:, 1] > limit[2]) * (cloud[:, 1] < limit[3]) * (cloud[:, 2] > limit[4]) * (cloud[:, 2] < limit[5])
+        choose_temp = (cloud[:, 0] > limit[0]) * (cloud[:, 0] < limit[1]) * (cloud[:, 1] > limit[2]) * (
+                    cloud[:, 1] < limit[3]) * (cloud[:, 2] > limit[4]) * (cloud[:, 2] < limit[5])
 
         choose = ((depth.flatten() != 0.0) * choose_temp).nonzero()[0]
 
@@ -279,7 +280,6 @@ class Dataset():
 
         return ans_target, ans_scale
 
-
     def getone(self, current_r, current_t):
         choose_obj = self.choose_obj
         choose_frame = self.real_obj_list[self.choose_obj][self.index]
@@ -300,18 +300,15 @@ class Dataset():
         anchor_box, scale = self.get_anchor_box(target)
         cloud_fr = self.change_to_scale(scale, cloud_fr)
 
-
         return self.norm(torch.from_numpy(img_fr.astype(np.float32))).unsqueeze(0), \
-               torch.LongTensor(choose_fr.astype(np.int32)).unsqueeze(0), \
-               torch.from_numpy(cloud_fr.astype(np.float32)).unsqueeze(0), \
-               torch.from_numpy(anchor_box.astype(np.float32)).unsqueeze(0), \
-               torch.from_numpy(scale.astype(np.float32)).unsqueeze(0)
-
+            torch.LongTensor(choose_fr.astype(np.int32)).unsqueeze(0), \
+            torch.from_numpy(cloud_fr.astype(np.float32)).unsqueeze(0), \
+            torch.from_numpy(anchor_box.astype(np.float32)).unsqueeze(0), \
+            torch.from_numpy(scale.astype(np.float32)).unsqueeze(0)
 
     def getfirst(self, choose_obj, video_id):
         self.choose_obj = choose_obj
         self.video_id = video_id
- 
 
         for k in range(0, len(self.real_obj_list[self.choose_obj])):
             if self.video_id in self.real_obj_list[self.choose_obj][k].split('/'):
@@ -358,8 +355,10 @@ class Dataset():
         # img = np.array(Image.open('{0}_color.png'.format(self.real_obj_list[self.choose_obj][self.index])))
         img_dir = '{0}_color.png'.format(self.real_obj_list[self.choose_obj][self.index])
         img = np.array(Image.open(img_dir))
-        save_img_dir = '{0}_color_with_pose.png'.format(self.real_obj_list[self.choose_obj][self.index])
 
+        # save_img_dir = '{0}_color_with_pose.png'.format(self.real_obj_list[self.choose_obj][self.index])
+        save_img_dir = ('{0}_color_with_pose.png'.format(self.real_obj_list[self.choose_obj][self.index])
+                        .replace("real_val", "val_keypoint_pose"))
 
         cam_cx = self.cam_cx_2
         cam_cy = self.cam_cy_2
@@ -419,8 +418,8 @@ class Dataset():
             if x - 3 < 0 or x + 3 > 479 or y - 3 < 0 or y + 3 > 639:
                 continue
 
-            for xxx in range(x-3, x+4):
-                for yyy in range(y-3, y+4):
+            for xxx in range(x - 3, x + 4):
+                for yyy in range(y - 3, y + 4):
                     img[xxx][yyy] = self.color[0]
 
         for tg in bbox:
@@ -430,8 +429,8 @@ class Dataset():
             if x - 3 < 0 or x + 3 > 479 or y - 3 < 0 or y + 3 > 639:
                 continue
 
-            for xxx in range(x-2, x+3):
-                for yyy in range(y-2, y+3):
+            for xxx in range(x - 2, x + 3):
+                for yyy in range(y - 2, y + 3):
                     img[xxx][yyy] = self.color[1]
 
         tg = anchor_box[www]
@@ -440,8 +439,8 @@ class Dataset():
         x = int(tg[1] * cam_fy / tg[2] + cam_cy)
 
         if x - 5 >= 0 and x + 5 <= 479 and y - 5 >= 0 and y + 5 <= 639:
-            for xxx in range(x-4, x+5):
-                for yyy in range(y-4, y+5):
+            for xxx in range(x - 4, x + 5):
+                for yyy in range(y - 4, y + 5):
                     img[xxx][yyy] = self.color[2]
 
         ##############################################################
@@ -517,19 +516,18 @@ class Dataset():
                 for yyy in range(y - 2, y + 3):
                     img[xxx][yyy] = self.color1[2]
 
-
-
         if add_on:
             self.index += 1
             Image.fromarray(img).save(save_img_dir)
 
-
     def __len__(self):
         return self.length
+
 
 border_list = [-1, 40, 80, 120, 160, 200, 240, 280, 320, 360, 400, 440, 480, 520, 560, 600, 640, 680]
 img_width = 480
 img_length = 640
+
 
 def get_2dbbox(cloud, cam_cx, cam_cy, cam_fx, cam_fy, cam_scale):
     rmin = 10000
@@ -559,7 +557,7 @@ def get_2dbbox(cloud, cam_cx, cam_cy, cam_fx, cam_fy, cam_scale):
         cmax = 639
 
     r_b = rmax - rmin
-    #print(rmax - rmin, cmax - cmin)
+    # print(rmax - rmin, cmax - cmin)
     for tt in range(len(border_list)):
         if r_b > border_list[tt] and r_b < border_list[tt + 1]:
             r_b = border_list[tt + 1]
@@ -574,7 +572,7 @@ def get_2dbbox(cloud, cam_cx, cam_cy, cam_fx, cam_fy, cam_scale):
     rmax = center[0] + int(r_b / 2)
     cmin = center[1] - int(c_b / 2)
     cmax = center[1] + int(c_b / 2)
-        
+
     if rmin < 0:
         delt = -rmin
         rmin = 0
@@ -591,7 +589,7 @@ def get_2dbbox(cloud, cam_cx, cam_cy, cam_fx, cam_fy, cam_scale):
         delt = cmax - img_length
         cmax = img_length
         cmin -= delt
-        
+
     return rmin, rmax, cmin, cmax
 
 
